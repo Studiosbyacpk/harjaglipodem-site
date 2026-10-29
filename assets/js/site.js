@@ -16,6 +16,32 @@
 
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ------------------------------------------------ campaign parameters */
+
+  // A visitor from an ad arrives with utm_* and fbclid/gclid in the address.
+  // Copy them onto the links to akademisktcentrum.com, so that a booking made
+  // after reading still carries its source: the booking-calendar redirect
+  // keeps the query string and Kompass saves it on the consultation. Nothing
+  // is stored here; the values travel only in a link the visitor follows.
+  forwardCampaignParams();
+
+  function forwardCampaignParams() {
+    if (!window.URL || !window.URLSearchParams) return;
+    var keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid'];
+    var here = new URLSearchParams(window.location.search);
+    var carry = keys.filter(function (k) { return here.get(k); });
+    if (!carry.length) return;
+    Array.prototype.forEach.call(document.querySelectorAll('a[href]'), function (a) {
+      var url;
+      try { url = new URL(a.href); } catch (e) { return; }
+      if (!/(^|\.)akademisktcentrum\.com$/.test(url.hostname)) return;
+      carry.forEach(function (k) {
+        if (!url.searchParams.has(k)) url.searchParams.set(k, here.get(k));
+      });
+      a.href = url.toString();
+    });
+  }
+
   /* ------------------------------------------------------- symptom check */
 
   var check = document.getElementById('symtomkollen');
